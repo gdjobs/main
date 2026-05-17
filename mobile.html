@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Search Portal - Offline</title>
+<style>
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #f0f4ff, #dbe4ff);
+    margin: 0;
+    padding: 0;
+}
+
+/* Fixed hamburger menu */
+#filterMenu {
+    position: fixed;
+    top: 20px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+#filterMenu div {
+    width: 35px;
+    height: 4px;
+    background-color: #1e40ff;
+    border-radius: 2px;
+}
+
+/* Fixed big bookmark */
+#bigBookmark {
+    position: fixed;
+    top: 20px;
+    right: 10px;
+    font-size: 2.8rem;
+    color: #1e40ff;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+/* Container padding to avoid fixed icons */
+.container {
+    padding-left: 70px;
+    padding-right: 70px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Filter container (hidden initially) */
+#filterContainer {
+    display: none;
+    margin-top: 10px;
+    gap: 8px;
+}
+
+#filterContainer input {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #1e40ff;
+}
+
+/* Job card - 25% bigger */
+.job-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px 30px; /* increased from 12px 15px */
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* increased gap */
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px; /* increased spacing */
+}
+
+/* Job info */
+.job-title {
+    font-weight: 600;
+    color: #1e40ff;
+    font-size: 1.25rem; /* increased from 1rem */
+}
+
+.job-exp-location {
+    font-size: 1rem; /* increased from 0.85rem */
+    color: #374151;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px; /* slightly larger gap */
+}
+
+.skills span {
+    background-color: #e0e7ff;
+    color: #1e40ff;
+    font-size: 0.9rem; /* increased from 0.75rem */
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+/* Apply / Seen button */
+.apply-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    background-color: #1e40ff;
+    color: #fff;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1rem;
+}
+
+.seen-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    background-color: #e0e7ff;
+    color: #16a34a;
+    cursor: default;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1rem;
+}
+
+/* Bookmark icon for job card */
+.bookmark-icon {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    fill: #888;
+}
+
+.bookmark-icon.bookmarked {
+    fill: #f59e0b;
+}
+
+/* Modal */
+#bookmarkModal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    overflow-y: auto;
+}
+
+.modal-content {
+    background: #fff;
+    margin: 10% auto;
+    padding: 15px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+}
+
+/* Close button */
+.close-modal {
+    float: right;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+/* Responsive */
+@media(max-width:480px){
+    .container { padding-left: 50px; padding-right: 50px; }
+    #bigBookmark { font-size: 2rem; right: 5px; }
+    #filterMenu div { width: 30px; height: 3px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hamburger menu -->
+<div id="filterMenu">
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+</div>
+
+<!-- Big bookmark -->
+<span id="bigBookmark">&#128278;</span>
+
+<div class="container">
+    <!-- Filter inputs (hidden by default) -->
+    <div id="filterContainer" class="d-flex flex-column mb-3">
+        <input type="text" id="searchTitle" placeholder="Job Title">
+        <input type="text" id="searchExp" placeholder="Years of Experience">
+        <input type="text" id="searchLocation" placeholder="Location">
+        <input type="text" id="searchSkill" placeholder="Skills">
+    </div>
+
+    <h1 class="text-center mb-3">Job Search Portal</h1>
+    <div id="jobsContainer"></div>
+    <p class="text-center text-muted mt-4" id="noResults" style="display:none;">No matching jobs found</p>
+</div>
+
+<!-- Modal for bookmarked jobs -->
+<div id="bookmarkModal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Bookmarked Jobs</h3>
+        <div id="bookmarkJobsContainer"></div>
+    </div>
+</div>
+
+<script>
+// Toggle filters
+document.getElementById('filterMenu').addEventListener('click', ()=>{
+    const fc = document.getElementById('filterContainer');
+    fc.style.display = fc.style.display==='flex' ? 'none' : 'flex';
+    fc.style.flexDirection = 'column';
+});
+
+// Jobs data
+const jobs = [
+  {title:"a", experience:"1", location:"sdhiugj", skills:["orkgs","bn","kfnsb"], apply_link:"skjiijwp.com"},
+  {title:"b", experience:"2", location:"iajioejf", skills:["oiaije","wiodjv","oenvw"], apply_link:"wnogjwikegvp.com"},
+  {title:"c", experience:"3", location:"kejef", skills:["kmpwg","dvmeokwg"], apply_link:"enggfohwnep.com"},
+  {title:"a", experience:"1", location:"sdhiugj", skills:["orkgs","bn","kfnsb"], apply_link:"skjiijwpe.com"},
+  {title:"b", experience:"2", location:"iajioejf", skills:["oiaije","wiodjv","oenvw"], apply_link:"wnogjwikefgvp.com"},
+  {title:"c", experience:"3", location:"kejef", skills:["kmpwg","dvmeokweg"], apply_link:"enggfohwnep.com"},
+  
+];
+
+const jobsContainer = document.getElementById('jobsContainer');
+const noResults = document.getElementById('noResults');
+let appliedJobs = JSON.parse(localStorage.getItem('appliedJobs')||'[]');
+let bookmarkedJobs = JSON.parse(localStorage.getItem('bookmarkedJobs')||'[]');
+
+function renderJobs(list){
+    jobsContainer.innerHTML = '';
+    if(list.length===0){ noResults.style.display='block'; return; }
+    noResults.style.display='none';
+    list.forEach(job=>{
+        const div = document.createElement('div');
+        div.className = 'job-card';
+        div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center">
+                <div class="job-title">${job.title}</div>
+                <svg class="bookmark-icon ${bookmarkedJobs.includes(job.title)?'bookmarked':''}" viewBox="0 0 24 24">
+                    <path d="M6 2v20l6-5.5L18 22V2z"/>
+                </svg>
+            </div>
+            <div class="job-exp-location"><span>${job.experience}</span><span>${job.location}</span></div>
+            <div class="skills">${job.skills.map(s=>`<span>${s}</span>`).join('')}</div>
+            <div><a href="${job.apply_link}" class="${appliedJobs.includes(job.title)?'seen-btn':'apply-btn'}">${appliedJobs.includes(job.title)?'Seen':'Apply'}</a></div>
+        `;
+        jobsContainer.appendChild(div);
+
+        // Apply button
+        const btn = div.querySelector('a');
+        btn.addEventListener('click', ()=>{
+            if(!appliedJobs.includes(job.title)){
+                appliedJobs.push(job.title);
+                localStorage.setItem('appliedJobs', JSON.stringify(appliedJobs));
+                btn.className='seen-btn';
+                btn.textContent='Seen';
+            }
+        });
+
+        // Bookmark icon
+        const icon = div.querySelector('.bookmark-icon');
+        icon.addEventListener('click', ()=>{
+            if(bookmarkedJobs.includes(job.title)){
+                bookmarkedJobs = bookmarkedJobs.filter(j=>j!==job.title);
+                icon.classList.remove('bookmarked');
+            }else{
+                bookmarkedJobs.push(job.title);
+                icon.classList.add('bookmarked');
+            }
+            localStorage.setItem('bookmarkedJobs', JSON.stringify(bookmarkedJobs));
+            renderBookmarkModal();
+        });
+    });
+}
+
+function renderBookmarkModal(){
+    const container = document.getElementById('bookmarkJobsContainer');
+    container.innerHTML = '';
+    bookmarkedJobs.forEach(title=>{
+        const job = jobs.find(j=>j.title===title);
+        if(job){
+            const div = document.createElement('div');
+            div.className='job-card';
+            div.innerHTML=`
+                <div class="job-title">${job.title}</div>
+                <div class="job-exp-location"><span>${job.experience}</span><span>${job.location}</span></div>
+                <div class="skills">${job.skills.map(s=>`<span>${s}</span>`).join('')}</div>
+            `;
+            container.appendChild(div);
+        }
+    });
+}
+
+// Modal open/close
+document.getElementById('bigBookmark').addEventListener('click', ()=>{
+    document.getElementById('bookmarkModal').style.display='block';
+});
+document.querySelector('.close-modal').addEventListener('click', ()=>{
+    document.getElementById('bookmarkModal').style.display='none';
+});
+window.addEventListener('click', (e)=>{
+    if(e.target==document.getElementById('bookmarkModal')){
+        document.getElementById('bookmarkModal').style.display='none';
+    }
+});
+
+// Initial render
+renderJobs(jobs);
+renderBookmarkModal();
+</script>
+</body>
+</html>

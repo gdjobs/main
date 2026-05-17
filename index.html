@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Search Portal with Bookmarks</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f0f4ff, #dbe4ff);
+    color: #1f2937;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #1e40ff;
+    font-weight: 700;
+}
+
+/* Big bookmark icon fixed */
+#bigBookmark {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    font-size: 4rem;
+    cursor: pointer;
+    color: #1e40ff;
+    z-index: 1050;
+}
+
+/* Filters sticky */
+.search-box {
+    position: sticky;
+    top: 100px; /* leave space below big bookmark */
+    z-index: 1000;
+    background-color: #ffffff;
+    padding: 15px 10px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+/* Filters input */
+.search-box input {
+    padding: 10px 15px;
+    border-radius: 10px;
+    border: 1px solid #1e40ff;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.search-box input:focus {
+    border-color: #1e40ff;
+    box-shadow: 0 0 8px rgba(30,64,255,0.3);
+}
+
+/* Job Card */
+.job-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: grid;
+    grid-template-columns: 2fr 2fr 3fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 15px;
+    transition: 0.3s;
+    position: relative;
+}
+
+.job-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+
+/* Job info */
+.job-title {
+    font-weight: 600;
+    color: #1e40ff;
+}
+
+.job-exp-location {
+    font-size: 0.85rem;
+    color: #374151;
+    display: flex;
+    gap: 40px;
+}
+
+/* Skills */
+.skills span {
+    background-color: #e0e7ff;
+    color: #1e40ff;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 6px;
+    margin-right: 4px;
+}
+
+/* Buttons */
+.apply-btn {
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    background-color: #1e40ff;
+    color: #ffffff;
+    border: none;
+    transition: 0.3s;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.apply-btn:hover {
+    background-color: #1c3ed6;
+}
+
+.seen-btn {
+    background-color: #e0e7ff;
+    color: #16a34a;
+    cursor: default;
+}
+
+.seen-btn:hover {
+    background-color: #e0e7ff;
+}
+
+/* Small bookmark icon */
+.bookmark-icon {
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #888;
+    transition: 0.3s;
+}
+
+.bookmark-icon.bookmarked {
+    color: #f59e0b; /* Orange if bookmarked */
+}
+
+/* Modal */
+.modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+
+<div class="container">
+    <h1>Job Search Portal</h1>
+
+    <!-- Filters -->
+    <div class="row g-2 search-box">
+        <div class="col-md">
+            <input type="text" id="searchTitle" class="form-control" placeholder="Job Title">
+        </div>
+        <div class="col-md">
+            <input type="text" id="searchExp" class="form-control" placeholder="Years of Experience">
+        </div>
+        <div class="col-md">
+            <input type="text" id="searchLocation" class="form-control" placeholder="Location">
+        </div>
+        <div class="col-md">
+            <input type="text" id="searchSkill" class="form-control" placeholder="Skills">
+        </div>
+    </div>
+
+    <!-- Job container -->
+    <div id="jobsContainer"></div>
+    <p class="text-center text-muted mt-4" id="noResults" style="display:none;">No matching jobs found</p>
+</div>
+
+<!-- Big Bookmark -->
+<i id="bigBookmark" class="fa-solid fa-bookmark"></i>
+
+<!-- Modal for bookmarked jobs -->
+<div class="modal fade" id="bookmarkModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bookmarked Jobs</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="bookmarkJobsContainer">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const jobs = [
+  {title:"a", experience:"1", location:"sdhiugj", skills:["orkgs","bn","kfnsb"], apply_link:"skjiijwp.com"},
+  {title:"b", experience:"2", location:"iajioejf", skills:["oiaije","wiodjv","oenvw"], apply_link:"wnogjwikegvp.com"},
+  {title:"c", experience:"3", location:"kejef", skills:["kmpwg","dvmeokwg"], apply_link:"enggfohwnep.com"},
+  {title:"a", experience:"1", location:"sdhiugj", skills:["orkgs","bn","kfnsb"], apply_link:"skjiijwpe.com"},
+  {title:"b", experience:"2", location:"iajioejf", skills:["oiaije","wiodjv","oenvw"], apply_link:"wnogjwikefgvp.com"},
+  {title:"c", experience:"3", location:"kejef", skills:["kmpwg","dvmeokweg"], apply_link:"enggfohwnep.com"},
+  
+];
+
+const jobsContainer = document.getElementById('jobsContainer');
+const noResults = document.getElementById('noResults');
+
+// Get applied jobs and bookmarked jobs from localStorage
+let appliedJobs = JSON.parse(localStorage.getItem('appliedJobs') || '[]');
+let bookmarkedJobs = JSON.parse(localStorage.getItem('bookmarkedJobs') || '[]');
+
+function renderJobs(list){
+    jobsContainer.innerHTML = '';
+    if(list.length===0){ 
+        noResults.style.display='block'; 
+        return; 
+    }
+    noResults.style.display='none';
+
+    // Separate seen (applied) and unseen jobs
+    const unseenJobs = [];
+    const seenJobs = [];
+    list.forEach((job, index) => {
+        const jobId = index; // unique identifier
+        if(appliedJobs.includes(jobId)){
+            seenJobs.push({job, jobId});
+        } else {
+            unseenJobs.push({job, jobId});
+        }
+    });
+
+    // Concatenate: unseen first, seen last
+    const reorderedList = unseenJobs.concat(seenJobs);
+
+    reorderedList.forEach(({job, jobId})=>{
+        const row = document.createElement('div');
+        row.className = 'job-card';
+        row.dataset.title = job.title.toLowerCase();
+        row.dataset.location = job.location.toLowerCase();
+        row.dataset.skills = job.skills.join(' ').toLowerCase();
+        row.dataset.exp = job.experience.toLowerCase();
+
+        row.innerHTML = `
+            <div class="job-title">${job.title}</div>
+            <div class="job-exp-location"><span>${job.experience}</span><span>${job.location}</span></div>
+            <div class="skills">${job.skills.map(s=>`<span>${s}</span>`).join('')}</div>
+            <div>
+                <a href="${job.apply_link}" target="_blank" class="apply-btn ${appliedJobs.includes(jobId)?'seen-btn':''}">
+                    ${appliedJobs.includes(jobId)?'Seen':'Apply'}
+                </a>
+            </div>
+            <div>
+                <i class="fa-solid fa-bookmark bookmark-icon ${bookmarkedJobs.includes(jobId)?'bookmarked':''}"></i>
+            </div>
+        `;
+        jobsContainer.appendChild(row);
+
+        // Apply button
+        const applyBtn = row.querySelector('.apply-btn');
+        if(!appliedJobs.includes(jobId)){
+            applyBtn.addEventListener('click', () => {
+                appliedJobs.push(jobId);
+                localStorage.setItem('appliedJobs', JSON.stringify(appliedJobs));
+                renderJobs(jobs);
+            });
+        }
+
+        // Bookmark button
+        const bookmarkBtn = row.querySelector('.bookmark-icon');
+        bookmarkBtn.addEventListener('click', () => {
+            if(bookmarkedJobs.includes(jobId)){
+                bookmarkedJobs = bookmarkedJobs.filter(id => id !== jobId);
+                bookmarkBtn.classList.remove('bookmarked');
+            } else {
+                bookmarkedJobs.push(jobId);
+                bookmarkBtn.classList.add('bookmarked');
+            }
+            localStorage.setItem('bookmarkedJobs', JSON.stringify(bookmarkedJobs));
+        });
+    });
+}
+
+renderJobs(jobs);
+
+const titleSearch = document.getElementById('searchTitle');
+const expSearch = document.getElementById('searchExp');
+const locationSearch = document.getElementById('searchLocation');
+const skillSearch = document.getElementById('searchSkill');
+
+function filterJobs(){
+    const title = titleSearch.value.toLowerCase();
+    const exp = expSearch.value.toLowerCase();
+    const location = locationSearch.value.toLowerCase();
+    const skill = skillSearch.value.toLowerCase();
+    const filtered = jobs.filter(job=>{
+        return job.title.toLowerCase().includes(title) &&
+               job.experience.toLowerCase().includes(exp) &&
+               job.location.toLowerCase().includes(location) &&
+               job.skills.join(' ').toLowerCase().includes(skill);
+    });
+    renderJobs(filtered);
+}
+
+titleSearch.addEventListener('input', filterJobs);
+expSearch.addEventListener('input', filterJobs);
+locationSearch.addEventListener('input', filterJobs);
+skillSearch.addEventListener('input', filterJobs);
+
+// Big bookmark click
+const bigBookmark = document.getElementById('bigBookmark');
+bigBookmark.addEventListener('click', () => {
+    const container = document.getElementById('bookmarkJobsContainer');
+    container.innerHTML = '';
+
+    if(bookmarkedJobs.length === 0){
+        container.innerHTML = '<p>No bookmarked jobs.</p>';
+    } else {
+        bookmarkedJobs.forEach(jobId => {
+            const job = jobs[jobId]; // use index instead of title
+            if(job){
+                const div = document.createElement('div');
+                div.className = 'job-card mb-2';
+                div.innerHTML = `
+                    <div class="job-title">${job.title}</div>
+                    <div class="job-exp-location"><span>${job.experience}</span><span>${job.location}</span></div>
+                    <div class="skills">${job.skills.map(s=>`<span>${s}</span>`).join('')}</div>
+                    <div><a href="${job.apply_link}" target="_blank" class="apply-btn ${appliedJobs.includes(jobId)?'seen-btn':''}">${appliedJobs.includes(jobId)?'Seen':'Apply'}</a></div>
+                    <div>
+                        <i class="fa-solid fa-bookmark bookmark-icon ${bookmarkedJobs.includes(jobId)?'bookmarked':''}"></i>
+                    </div>
+                `;
+                container.appendChild(div);
+
+                // Allow toggling bookmark inside modal
+                const bookmarkBtn = div.querySelector('.bookmark-icon');
+                bookmarkBtn.addEventListener('click', () => {
+                    if(bookmarkedJobs.includes(jobId)){
+                        bookmarkedJobs = bookmarkedJobs.filter(id => id !== jobId);
+                        bookmarkBtn.classList.remove('bookmarked');
+                    } else {
+                        bookmarkedJobs.push(jobId);
+                        bookmarkBtn.classList.add('bookmarked');
+                    }
+                    localStorage.setItem('bookmarkedJobs', JSON.stringify(bookmarkedJobs));
+                    renderJobs(jobs); // update main list too
+                });
+            }
+        });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('bookmarkModal'));
+    modal.show();
+});
+</script>
+</body>
+</html>
