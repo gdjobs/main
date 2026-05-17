@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Job JSON Generator</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; background: #f0f8ff; }
+  h2 { margin-top: 0; }
+  textarea { width: 100%; height: 150px; margin-bottom: 10px; font-family: monospace; }
+  button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<h2>Enter Job Details (TAB-separated: Title, Experience, Location, Skills(comma separated), Apply URL)</h2>
+<textarea id="jobsInput" placeholder="Frontend Developer[TAB]2+ Years[TAB]Hyderabad[TAB]HTML,CSS,JS,React[TAB]#"></textarea>
+<br>
+<button onclick="generateJSON()">Done</button>
+
+<h2>Generated JSON / JS Array</h2>
+<textarea id="jobsOutput" readonly></textarea>
+
+<script>
+// Allow TAB key to insert tab character
+document.getElementById('jobsInput').addEventListener('keydown', function(e){
+    if(e.key === 'Tab'){
+        e.preventDefault();
+        let start = this.selectionStart;
+        let end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + "\t" + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 1;
+    }
+});
+
+function generateJSON(){
+    const rawText = document.getElementById('jobsInput').value.trim();
+    if(!rawText){ 
+        alert("Please enter job details!");
+        return; 
+    }
+    const lines = rawText.split("\n");
+    let jobs = [];
+    for(const line of lines){
+        const parts = line.split("\t");
+        if(parts.length !== 5){
+            alert("Each line must have 5 TAB-separated values:\n" + line);
+            return;
+        }
+        const [title, experience, location, skillsStr, url] = parts;
+        const skills = skillsStr.split(",").map(s => `"${s.trim()}"`);
+        jobs.push(`{title:"${title.trim()}", experience:"${experience.trim()}", location:"${location.trim()}", skills:[${skills.join(",")}], apply_link:"${url.trim()}"}`);
+    }
+    document.getElementById('jobsOutput').value = jobs.join(",\n  ");
+}
+</script>
+
+</body>
+</html>
